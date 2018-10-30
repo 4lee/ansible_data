@@ -1,0 +1,8 @@
+---
+- blockinfile:
+    content: |
+       LoadModule dispatcher_module {{ apache_folder }}modules/dispatcher-apache2.4-4.2.3.so
+    insertafter: "LoadModule rewrite_module modules/mod_rewrite.so"
+    path: "{{ apache_folder }}conf/httpd.conf"
+  ignore_errors: true
+  name: "Add LoadModule"

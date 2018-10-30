@@ -1,0 +1,85 @@
+---
+- name: "Copy Dispatcher from source"
+  copy:
+    src: "{{ dispatcher_loc }}"
+    dest: "{{ apache_folder }}modules"
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: "{{ apache_conf_file }}"
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: '#Include conf/extra/httpd-vhosts.conf', replace: 'Include conf/extra/httpd-vhosts.conf' }
+    - { regexp1: '#Include conf/extra/httpd-ssl.conf', replace: 'Include conf/extra/httpd-ssl.conf' }
+    - { regexp1: '#LoadModule ssl_module modules/mod_ssl.so', replace: 'LoadModule ssl_module modules/mod_ssl.so' }
+    - { regexp1: '#LoadModule rewrite_module modules/mod_rewrite.so', replace: 'LoadModule rewrite_module modules/mod_rewrite.so' }
+   # - { regexp1: '#LoadModule dispatcher_module {{ apache_folder }}modules/dispatcher-apache2.4-4.2.3.so', replace: 'LoadModule dispatcher_module {{ apache_folder }}modules/dispatcher-apache2.4-4.2.3.so' }
+    - { regexp1: '#LoadModule proxy_module modules/mod_proxy.so', replace: 'LoadModule proxy_module modules/mod_proxy.so' }
+    - { regexp1: '#LoadModule proxy_http_module modules/mod_proxy_http.so', replace: 'LoadModule proxy_http_module modules/mod_proxy_http.so' }
+    - { regexp1: 'Listen 80', replace: 'Listen 127.0.0.1:80' }
+    - { regexp1: '#ServerName www.example.com:80', replace: 'ServerName 127.0.0.1:80' }
+
+
+- blockinfile:
+    content: |
+        <IfModule prefork.c>
+        StartServers       5
+        MinSpareServers    10
+        MaxSpareServers   10
+        MaxClients       256
+        KeepAliveTimeOut 15
+        TimeOut 300
+        KeepAlive on
+        KeepAliveTimeOut 15
+        LimitRequestBody 1
+        LimitRequestFields 0
+        LimitRequestFieldSize 8190
+        LimitRequestLine 8190
+        MaxKeepAliveRequests 200
+        </IfModule>
+    path: "{{ apache_conf_file }}"
+  ignore_errors: true
+  name: "ADD Prefork setting"
+
+- name: "Copy dispatcher.so "
+  copy:
+    src: "{{ dispatcher_src_file }}"
+    dest: "{{ apache_conf_folder }}"
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: "{{ dispatcher_file }}"
+    regexp: "/hostname \"182.163.1.22\""
+    replace: "/hostname \"localhost\""
+
+- include_tasks: add_dispatcher.yml
+- include_tasks: add_dispatcher_block.yml
+- include_tasks: dispatcher_conf.yml
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: "{{ apache_sslconf_file }}"
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace1 }}"
+  with_items:
+    - { regexp1: 'Listen 443', replace1: 'Listen 127.0.0.1:443' }
+    - { regexp1: 'ServerName www.example.com:443', replace1: 'ServerName 127.0.0.1:443' }
+    - { regexp1: 'SSLCertificateFile \"{{ apache_conf_folder }}/server.crt\"', replace1: 'SSLCertificateFile "{{ apache_conf_folder }}/certs/server.crt"' }
+    - { regexp1: 'SSLCertificateKeyFile "{{ apache_conf_folder }}/server.key"', replace1: 'SSLCertificateKeyFile "{{ apache_conf_folder }}/certs/server.key"' }
+
+- name: "Certs directory creation"
+  command: "{{ item }} chdir={{ apache_folder }}conf/"
+  with_items:
+  - mkdir certs
+
+- name: "Configure openssl"
+  command: "{{ item }} chdir={{ apache_folder }}conf/certs"
+  with_items:
+  - openssl genrsa -out server.key 3072
+  - openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=CommunityForce Ltd/OU=FAMS/CN=famspublisher.communityforce.com"
+
+- name: "Start apache"
+  command: "{{ item }} chdir={{ apache_folder }}bin"
+  with_items:
+  - ./apachectl start

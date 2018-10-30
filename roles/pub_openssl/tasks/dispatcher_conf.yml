@@ -1,0 +1,48 @@
+---
+- name: Ansible delete file glob
+  replace:
+    path: "{{ apache_folder }}conf/extra/httpd-vhosts.conf"
+    regexp: '^(.*)'
+    replace: '#\1'
+
+- shell: "ifconfig | grep -A 1 'eth0' | tail -n 1 | awk '{print $2}'"
+  register: privateip
+
+- shell: "echo 'my private IP is {{ private_ip }}'"
+
+- blockinfile:
+    content: |
+        <VirtualHost {{ private_ip }}:80>
+            #ServerAdmin webmaster@dummy-host.example.com
+            DocumentRoot "{{ apache_folder }}htdocs"
+            #ServerName dummy-host.example.com
+            #ServerAlias www.dummy-host.example.com
+            ErrorLog "{{ apache_folder }}logs/error_log"
+            CustomLog "{{ apache_folder }}logs/access_log" common
+            ServerName {{ private_ip }}:80
+        #ProxyTimeout 360
+                #ProxyPass / http://localhost:4502/ timeout=360 connectiontimeout=5 retry=310
+                #ProxyPassReverse / http://localhost:4502/
+
+
+             ErrorLog  "|{{ apache_folder }}bin/rotatelogs -l {{ apache_folder }}logs/Customized_error.log.%Y-%m-%d-%Z 86400"
+             CustomLog "|{{ apache_folder }}bin/rotatelogs -l {{ apache_folder }}logs/Customized_access.log.%Y-%m-%d-%Z 86400" common
+
+        <IfModule mod_rewrite.c>
+        RewriteEngine on
+        #RewriteBase /
+        #RewriteCond %{HTTP_HOST} !^www\. [NC]
+        #RewriteRule ^(.*)$ https://www.%{HTTP_HOST}/$1 [R=301,L]
+        #RewriteCond %{REQUEST_METHOD} ^TRACK|PUT|TRACE|DELETE|HEAD|OPTIONS|CONNECT
+        #RewriteRule [^a-zA-Z0-9\/\-\_\.] - [F,L]
+        #RewriteRule \.\. - [F,L]
+        #RewriteRule adduser|chmod|passwd|htpasswd|httpd\.conf - [F,L]
+        #RewriteOptions Inherit
+        #RewriteLog  "|{{ apache_folder }}bin/rotatelogs  -l {{ apache_folder }}logs/rewrite.log.%Y-%m-%d-%Z 86400"
+        #RewriteLogLevel 2
+        </IfModule>
+
+        </VirtualHost>
+    path: "{{ apache_folder }}conf/extra/httpd-vhosts.conf"
+  ignore_errors: true
+  name: "Add dispatcher data to conf file"

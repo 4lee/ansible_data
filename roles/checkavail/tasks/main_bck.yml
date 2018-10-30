@@ -1,0 +1,17 @@
+--- 
+- 
+ name: "Check Host availabilty"
+ file: "path={{ apps_loc }} state=directory"
+
+- name: "Create a was user"
+  user:
+   name: was
+   password: "{{ ''  | password_hash('sha512') }}"
+   groups: wheel
+   state: present
+   shell: /bin/bash
+   system: yes
+   createhome: yes
+   home: /home/was
+
+

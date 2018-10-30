@@ -1,0 +1,10 @@
+---
+- hosts: AemAut
+  become: true
+  roles:
+    - checkavail
+    - sysupdate
+    - java
+    - aeminstall
+    - apache
+    - aut_openssl 

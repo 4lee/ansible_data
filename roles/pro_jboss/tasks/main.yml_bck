@@ -1,0 +1,32 @@
+---
+- name: "Download Jboss Jar"
+  get_url:
+    url: "{{ jboss_dlink }}"
+    dest: "{{ destination_folder }}"
+    mode: 0755
+
+- name: "Modify standalone.conf"
+  replace:
+    dest: "{{ jboss_binloc }}standalone.conf "
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: 'JAVA_OPTS="-Xms1024m -Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError -XX:+UseCompressedOops"', replace: 'JAVA_OPTS="-Xms1024m -Xmx4096m -XX:MaxMetaspaceSize=1024m -D64 -XX:+HeapDumpOnOutOfMemoryError -XX:+UseCompressedOops"' }
+    - { regexp1: 'JAVA_OPTS="$JAVA_OPTS -DentityExpansionLimit=10000"' , replace: 'JAVA_OPTS="$JAVA_OPTS -DentityExpansionLimit=10000" -Djava:io.tmpdir=/opt/adobe/adobe_experience_manager_Forms/JavaTemp' }
+    - { regexp1: 'JAVA_OPTS="$JAVA_OPTS -Djboss.server.default.config=standalone.xml"' , replace: 'JAVA_OPTS="$JAVA_OPTS -Djboss.server.default.config=standalone.xml" add -Dlc.um.csrffilter.disabled=true' }
+
+
+
+- name: "Create Jboss service File"
+  action: "template src={{ jbosstemplate_loc }} dest={{ jboss_binloc}}init.d/ mode=0755"
+
+- name: "Change JBoss folder permission"
+  command: "chmod -R 755 {{ jboss_binloc}}"
+
+- name: "Start Jboss service"
+  command: "{{ item }}" 
+  with_items:
+  - "cd {{ jboss_binloc}}init.d/"
+  -  "./jbossas7 start"
+
+

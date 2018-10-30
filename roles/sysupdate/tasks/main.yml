@@ -1,0 +1,4 @@
+---
+- become: true
+  name: install updates
+  yum: name=* state=latest

@@ -1,0 +1,68 @@
+Using /home/ec2-user/community-force_automation/ansible/ansible.cfg as config file
+
+PLAY [AemAut] *********************************************************************************************************************************
+skipping: no hosts matched
+
+PLAY [AemPub] *********************************************************************************************************************************
+skipping: no hosts matched
+
+PLAY [AemPro] *********************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************
+ok: [104.211.10.12]
+
+TASK [checkavail : Check Host availabilty] ****************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "gid": 0, "group": "root", "mode": "0755", "owner": "root", "path": "/apps", "secontext": "unconfined_u:object_r:default_t:s0", "size": 6, "state": "directory", "uid": 0}
+
+TASK [checkavail : Create a was user] *********************************************************************************************************
+changed: [104.211.10.12] => {"append": false, "changed": true, "comment": "", "group": 993, "groups": "wheel", "home": "/home/was", "move_home": false, "name": "was", "password": "NOT_LOGGING_PASSWORD", "shell": "/bin/bash", "state": "present", "uid": 996}
+
+TASK [pro_java : Check Host availabilty] ******************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "gid": 0, "group": "root", "mode": "0755", "owner": "root", "path": "/apps/java/", "secontext": "unconfined_u:object_r:default_t:s0", "size": 6, "state": "directory", "uid": 0}
+
+TASK [pro_java : Unarchive jdk tar] ***********************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "dest": "/apps/java/", "extract_results": {"cmd": ["/bin/gtar", "--extract", "-C", "/apps/java/", "-z", "-f", "/home/devadmin/.ansible/tmp/ansible-tmp-1540398332.5-71852670810523/source"], "err": "", "out": "", "rc": 0}, "gid": 0, "group": "root", "handler": "TgzArchive", "mode": "0755", "owner": "root", "secontext": "unconfined_u:object_r:default_t:s0", "size": 26, "src": "/home/devadmin/.ansible/tmp/ansible-tmp-1540398332.5-71852670810523/source", "state": "directory", "uid": 0}
+
+TASK [pro_java : rename jdk folder to java folder] ********************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "cmd": ["mv", "/apps/java/jdk1.8.0_111", "/apps/java/java"], "delta": "0:00:00.007985", "end": "2018-10-24 16:26:07.151920", "rc": 0, "start": "2018-10-24 16:26:07.143935", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+
+TASK [pro_java : Fix ownership] ***************************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "gid": 0, "group": "root", "mode": "0755", "owner": "root", "path": "/apps/java/java", "secontext": "unconfined_u:object_r:default_t:s0", "size": 255, "state": "directory", "uid": 0}
+
+TASK [pro_java : Create link] *****************************************************************************************************************
+failed: [104.211.10.12] (item=ln -s /apps/java/java/bin/java) => {"changed": true, "cmd": ["ln", "-s", "/apps/java/java/bin/java"], "delta": "0:00:00.005546", "end": "2018-10-24 16:26:10.506454", "item": "ln -s /apps/java/java/bin/java", "msg": "non-zero return code", "rc": 1, "start": "2018-10-24 16:26:10.500908", "stderr": "ln: failed to create symbolic link ‘./java’: File exists", "stderr_lines": ["ln: failed to create symbolic link ‘./java’: File exists"], "stdout": "", "stdout_lines": []}
+failed: [104.211.10.12] (item=ln -s /apps/java/java/bin/jar) => {"changed": true, "cmd": ["ln", "-s", "/apps/java/java/bin/jar"], "delta": "0:00:00.006575", "end": "2018-10-24 16:26:11.326601", "item": "ln -s /apps/java/java/bin/jar", "msg": "non-zero return code", "rc": 1, "start": "2018-10-24 16:26:11.320026", "stderr": "ln: failed to create symbolic link ‘./jar’: File exists", "stderr_lines": ["ln: failed to create symbolic link ‘./jar’: File exists"], "stdout": "", "stdout_lines": []}
+failed: [104.211.10.12] (item=ln -s /apps/java/java/bin/javac) => {"changed": true, "cmd": ["ln", "-s", "/apps/java/java/bin/javac"], "delta": "0:00:00.005029", "end": "2018-10-24 16:26:12.153344", "item": "ln -s /apps/java/java/bin/javac", "msg": "non-zero return code", "rc": 1, "start": "2018-10-24 16:26:12.148315", "stderr": "ln: failed to create symbolic link ‘./javac’: File exists", "stderr_lines": ["ln: failed to create symbolic link ‘./javac’: File exists"], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [pro_java : create java.sh file with permissions.] ***************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "dest": "/etc/profile.d/java.sh", "gid": 0, "group": "root", "mode": "0755", "owner": "root", "secontext": "unconfined_u:object_r:bin_t:s0", "size": 275, "state": "file", "uid": 0}
+
+TASK [pro_java : create java.sh file with content] ********************************************************************************************
+ok: [104.211.10.12] => {"changed": false, "checksum": "09ddc2656be467ce93c4c84cb7eb28bae4dbcdf4", "gid": 0, "group": "root", "mode": "0755", "owner": "root", "path": "/etc/profile.d/java.sh", "secontext": "unconfined_u:object_r:bin_t:s0", "size": 275, "state": "file", "uid": 0}
+
+TASK [pro_java : Configure Java by java.sh] ***************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "cmd": "source /etc/profile.d/java.sh", "delta": "0:00:00.006121", "end": "2018-10-24 16:26:15.382750", "rc": 0, "start": "2018-10-24 16:26:15.376629", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+
+TASK [pro_java : include_tasks] ***************************************************************************************************************
+included: /home/ec2-user/community-force_automation/ansible/roles/pro_java/tasks/java_string.yml for 104.211.10.12
+
+TASK [pro_java : Populate /etc/.java dir] *****************************************************************************************************
+ok: [104.211.10.12] => {"changed": false, "gid": 0, "group": "root", "mode": "0755", "owner": "root", "path": "/etc/.java/deployment/", "secontext": "unconfined_u:object_r:etc_t:s0", "size": 35, "state": "directory", "uid": 0}
+
+TASK [pro_java : Create deployment.properties] ************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "dest": "/etc/.java/deployment/deployment.properties", "gid": 0, "group": "root", "mode": "0644", "owner": "root", "secontext": "unconfined_u:object_r:etc_t:s0", "size": 913, "state": "file", "uid": 0}
+
+TASK [pro_java : .java deployment properties data] ********************************************************************************************
+ok: [104.211.10.12] => {"changed": false, "msg": ""}
+
+TASK [pro_aem : Create directory for aem] *****************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "gid": 0, "group": "root", "mode": "0755", "owner": "root", "path": "/apps/aemforms_server_6_3_0_jboss_all_unix/", "secontext": "unconfined_u:object_r:default_t:s0", "size": 6, "state": "directory", "uid": 0}
+
+TASK [pro_aem : Unarchive aem tar] ************************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "dest": "/apps/", "extract_results": {"cmd": ["/bin/gtar", "--extract", "-C", "/apps/", "-z", "-f", "/home/devadmin/.ansible/tmp/ansible-tmp-1540398379.39-261276059448737/source"], "err": "", "out": "", "rc": 0}, "gid": 0, "group": "root", "handler": "TgzArchive", "mode": "0755", "owner": "root", "secontext": "unconfined_u:object_r:default_t:s0", "size": 62, "src": "/home/devadmin/.ansible/tmp/ansible-tmp-1540398379.39-261276059448737/source", "state": "directory", "uid": 0}
+
+TASK [pro_aem : Fix Ownership] ****************************************************************************************************************
+changed: [104.211.10.12] => {"changed": true, "gid": 0, "group": "root", "mode": "0775", "owner": "root", "path": "/apps/aemforms_server_6_3_0_jboss_all_unix/server/Disk1/InstData/Linux/NoVM/install.bin", "secontext": "unconfined_u:object_r:default_t:s0", "size": 9621899, "state": "file", "uid": 0}
+
+TASK [pro_aem : install AEM] ******************************************************************************************************************

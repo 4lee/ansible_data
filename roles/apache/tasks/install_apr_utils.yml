@@ -1,0 +1,10 @@
+---
+- name: Extracting apr_utils
+  unarchive: 'src={{ destination_folder }}apache_softwares/apr-util-1.5.2.tar.gz dest={{ destination_folder }}apache_softwares/ copy=no'
+
+- name: Install APR
+  command: "{{ item }} chdir={{ destination_folder }}apache_softwares/apr-util-1.5.2"
+  with_items:
+  - ./configure --prefix=/apps/apr-util-1.5.2 -with-apr=/apps/apr/1.4.8
+  - /usr/bin/make
+  - /usr/bin/make install

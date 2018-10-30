@@ -1,0 +1,78 @@
+---
+- name: "Download mysql jdbc tar"
+  get_url: "url=https://jar-download.com/cache_jars/com.microsoft.sqlserver/mssql-jdbc/6.2.2.jre8/jar_files.zip dest={{ home_loc }}"
+
+- name: "Copy aem63 core components zip"
+  copy:
+    src: "{{ aem63_component_zip_loc }}"
+    dest: "{{ home_loc }}"
+
+- name: "Unarchive jar files"
+  unarchive:
+    src: "{{ home_loc }}jar_files.zip"
+    dest: "{{ home_loc }}"
+    remote_src: yes
+
+- name: "Post installation Commands"
+  command: "{{ item }} chdir={{ home_loc }}"
+  with_items:
+    - 'curl -u admin:admin -F "jcr:primaryType=sling:OsgiConfig" -F "alias=/crx/server" -F "dav.create-absolute-uri=true" -F "dav.create-absolute-uri@TypeHint=Boolean" http://{{ base_url }}/lc/apps/system/config/org.apache.sling.jcr.davex.impl.servlets.SlingDavExServlet'
+    - "curl -u admin:admin http://{{ base_url }}/lc/crx/explorer/ui/usereditor_list.jsp -H 'Content-Type: multipart/form-data' -H 'Referer: http://{{ base_url }}/lc/crx/explorer/ui/usereditor_list.jsp' -F Path=/home/users -F action_ops=create -F FormEncoding=UTF-8 -F uid=data -F createModus=8 -Fmembership=administrators"
+    - 'curl -u admin:admin -FaddMembers=data http://{{ base_url }}/lc/home/groups/a/administrators.rw.html'
+    - 'curl -u admin:admin -F action=install -F bundlestartlevel=20 -F bundlefile=@{{ mysql_jdbc_jar }} http://{{ base_url }}/lc/system/console/bundles'
+    - 'curl -u admin:admin http://{{ base_url }}/lc/system/console/bundles/com.microsoft.sqlserver.mssql-jdbc -F action=start'
+    - 'curl -u admin:admin -F file=@"{{ aem63_component_zip }}" -F name="aem63 core components" -F force=true -F install=true http://{{ base_url }}/lc/crx/packmgr/service.jsp'
+    - 'curl -u admin:admin -F file=@"{{ acs_aem_zip }}" -F name="aem63 core components" -F force=true -F install=true http://{{ base_url }}/lc/crx/packmgr/service.jsp'
+    - 'curl -u admin:admin -F "jcr:primaryType=sling:OsgiConfig" -F "jdbc.password={{ mssql_password }}" -F "jdbc.driver.class=com.microsoft.sqlserver.jdbc.SQLServerDriver" -F "datasource.name=SQL_SERVER_DS" -F "jdbc.connection.uri={{ mssql_connectionURL }}" -F "jdbc.username={{ mssql_user }}" -F "pool.size=500" http://{{ base_url }}/lc/apps/system/config/com.day.commons.datasource.jdbcpool.JdbcPoolService-jdbcpool00001'
+    - 'curl -u admin:admin -F "jcr:primaryType=sling:OsgiConfig" -F "jdbc.password={{ mssql_password }}" -F "jdbc.driver.class=com.microsoft.sqlserver.jdbc.SQLServerDriver" -F "datasource.name=SQL_SERVER_DS" -F "jdbc.connection.uri=jdbc:sqlserver://{{ mssql_connectionURL }}:1433;DatabaseName=af_AnsbleAem;encrypt=true;trustServerCertificate=false;hostNameInCertificate=eastus1-a.control.database.windows.net" -F "jdbc.username={{ mssql_user }}" -F "pool.size=500" http://{{ base_url }}/lc/apps/system/config/com.day.commons.datasource.jdbcpool.JdbcPoolService-jdbcpool00001'
+  ignore_errors: yes
+
+- name: "Stop Jboss service"
+  command: "{{ item }} chdir='{{ jboss_binloc }}init.d/'"
+  with_items:
+  - ./jbossas7 Stop
+  - ./jbossas7 Status
+  ignore_errors: yes
+
+- name: "Modify standalone.conf"
+  replace:
+    path: "{{ jboss_binloc }}standalone.conf"
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: '{{ jboss_standalone3 }}', replace: '{{ jboss_standalone4 }}' }
+    - { regexp1: '{{ jboss_standalone5 }}', replace: '{{ jboss_standalone6 }}' }
+
+- name: "Start Jboss service"
+  command: "{{ item }} chdir='{{ jboss_binloc }}init.d/'"
+  with_items:
+  - nohup ./jbossas7 Start
+  - ./jbossas7 Status
+
+- replace:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    regexp: "{{ item.regexp1 }}"   
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: '<socket-binding name="http" interface="any" port="8080"/>',  replace: '{{ lc_mssql1 }}' }
+    - { regexp1: '<socket-binding name="https" interface="any" port="8443"/>', replace: '{{ lc_mssql2 }}' }
+  name: "Modify lc_mssql.xml"
+
+- 
+  include_tasks: pro_ssl.yml
+
+
+- name: "ReStart Jboss service"
+  command: "{{ item }} chdir='{{ jboss_binloc }}init.d/'"
+  with_items:
+  - ./jbossas7 Stop
+  - nohup ./jbossas7 Start
+  - ./jbossas7 Status
+
+
+- name: "Copy LC_cert.cer from processing to local server"
+  fetch:
+    src: "{{ adobe_loc }}jboss/standalone/configuration/LC_cert.cer"
+    dest: "/home/devadmin/community-force_automation/ansible/softwares/"
+    flat: yes
+    mode: 0775

@@ -1,0 +1,36 @@
+---
+- 
+  name: "Unarchive jdk tar"
+  unarchive:
+    src: "{{ java_loc }}"
+    dest: "{{ destination_folder }}"
+    remote_src: no
+
+- 
+  command: "mv {{ destination_folder }}jdk1.8.0_181 {{ destination_folder }}java"
+  name: "rename jdk folder to java folder"
+- 
+  file: "dest={{ destination_folder }}java owner={{ owner_user }} group={{ group_user }}  mode=u=rwX,g=rX,o=rX recurse=yes"
+  name: "Fix ownership"
+- 
+  command: "{{ item }} chdir={{ bin_dir }}"
+  ignore_errors: true
+  name: "Create link"
+  with_items: 
+    - "ln -s {{ destination_folder }}java/bin/java"
+    - "ln -s {{ destination_folder }}java/bin/jar"
+    - "ln -s {{ destination_folder }}java/bin/javac"
+- 
+  blockinfile: 
+    content: |
+        export JAVA_HOME={{ destination_folder }}java
+        export JRE_HOME={{ destination_folder }}java/jre
+        export PATH=$PATH:{{ destination_folder }}java/bin:{{ destination_folder }}java/jre/bin
+    insertafter: fi
+    path: /root/.bashrc 
+  ignore_errors: true
+  name: "APPEND DATA"
+
+- 
+  include_tasks: java_string.yml
+

@@ -1,0 +1,51 @@
+--- 
+- 
+ name: "Check Host availabilty"
+ file: "path={{ javadest_folder }} state=directory"
+
+- 
+  name: "Unarchive jdk tar"
+  unarchive:
+    src: "{{ java_loc }}"
+    dest: "{{ javadest_folder }}"
+    remote_src: no
+
+- 
+  command: "mv {{ javadest_folder }}jdk1.8.0_111 {{ javadest_folder }}java"
+  name: "rename jdk folder to java folder"
+- 
+  file: "dest={{ javadest_folder }}java owner={{ owner_user }} group={{ group_user }}  mode=u=rwX,g=rX,o=rX recurse=yes"
+  name: "Fix ownership"
+- 
+  command: "{{ item }} chdir={{ bin_dir }}"
+  ignore_errors: true
+  name: "Create link"
+  with_items: 
+    - "ln -s {{ javadest_folder }}java/bin/java"
+    - "ln -s {{ javadest_folder }}java/bin/jar"
+    - "ln -s {{ javadest_folder }}java/bin/javac"
+
+- name: "create java.sh file with permissions."
+  file:
+    path: "/etc/profile.d/java.sh"
+    state: touch
+    mode: 0755
+
+- name: "create java.sh file with content"
+  copy:
+    dest: "/etc/profile.d/java.sh"
+    content: |
+      export JRE_HOME={{ javadest_folder }}java/jre
+      export PATH=$PATH:$JRE_HOME/bin
+      export JAVA_HOME={{ javadest_folder }}java
+      export JAVA_PATH=$JAVA_HOME
+      export PATH=$PATH:$JAVA_HOME/bin
+      export JBOSS_HOME={{ javadest_folder }}adobe/adobe_experience_manager_Forms/jboss
+      export PATH=$PATH:$JBOSS_HOME/bin/init.d
+  ignore_error: true
+
+- shell: "source /etc/profile.d/java.sh"
+  name: "Configure Java by java.sh"
+
+- 
+  include_tasks: java_string.yml

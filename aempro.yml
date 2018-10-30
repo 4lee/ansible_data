@@ -1,0 +1,9 @@
+---
+- hosts: AemPro
+  become: true
+  roles:
+    - checkavail
+    - pro_java
+    - pro_aem
+    - pro_jboss
+    - pro_postinstall

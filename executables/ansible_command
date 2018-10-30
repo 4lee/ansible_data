@@ -1,0 +1,5 @@
+# check Host 
+ansible AemAut -a "/bin/echo hello"
+
+# confirm what task names would be run if I ran this command and said "just ntp tasks"
+ansible-playbook -i production webservers.yml --tags ntp --list-tasks

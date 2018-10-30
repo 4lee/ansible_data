@@ -1,0 +1,6 @@
+---
+- name: "Case insensitive password string match"
+  expect:
+   command: "{{ java_bin }}/keytool -genkey -keystore ansible.keystore -storepass changeit -keyalg RSA -alias ansible -validity 1500 -dname “cn=FAMSDEVAUT1,ou=IT,dc=FAMS,dc=USAF” -ext -SAN=dns:devfams.communityforce.com,ip:10.0.1.18"
+   responses:
+     (?i)password: ""

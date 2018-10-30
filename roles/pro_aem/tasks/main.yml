@@ -1,0 +1,134 @@
+---
+- name: "Create directory for aem "
+  file:
+    path: "{{ aem_dest }}"
+    state: directory
+
+- 
+  name: "Unarchive aem tar"
+  unarchive:
+    src: "{{ aem_loc }}"
+    dest: "{{ destination_folder }}"
+    remote_src: no
+
+- 
+  file: 
+    path: "{{ aem_dest }}server/Disk1/InstData/Linux/NoVM/install.bin"
+    owner: "{{ owner_user }}"
+    group: "{{ group_user }}"
+    mode: 0775
+  name: "Fix Ownership"
+
+- command: "{{ item }} -i Silent chdir={{ aem_dest }}server/Disk1/InstData/Linux/NoVM/"
+  with_items:
+   - ./install.bin
+  name : "install AEM"
+
+- name: "Move adobe folder into /apps"
+  shell: "mv /opt/adobe /apps/"
+
+- name: "create directory"
+  file:
+    dest: "{{ item }}"
+    state: directory
+  with_items: ["{{ adobe_loc }}Temp" , "{{ adobe_loc }}GDS" , "{{ adobe_loc }}JavaTemp" , "{{ aem_dest }}third_party/jboss"] 
+
+- name: "Download Latest Jboss Jar"
+  get_url:
+    url: "{{ jboss_dlink }}"
+    dest: "{{ aem_dest }}third_party/"
+    mode: 0755
+
+- name: "Unzip Jboss folder"
+  command: "{{ item }}  chdir={{ aem_dest }}third_party/"
+  with_items:
+   - "unzip {{ jboss_zip }}"
+   - "mv {{ jboss_Final }}  {{ adobe_loc }}"
+
+- name: "Unzip Jboss folder"
+  unarchive:
+    src: "{{ aem_dest }}third_party/jboss.zip"
+    dest: "{{ aem_dest }}third_party/jboss"
+    remote_src: yes
+
+- name: "Copy JBOSS Folder"
+  command: "cp -r {{ aem_dest }}third_party/jboss  {{ adobe_loc }}"
+
+
+# some task remain here lc_mssql.xml
+
+- name: "Change permission of jboss-logging jar"
+  file:
+    path: "{{ jboss_loggingjar_loc }}"
+    mode: 0775
+
+- name: "Encrypt your database password by using below command"
+  command: "{{ jar_command }} {{ mssql_password }}"
+#  command: "java -cp /apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/picketbox/main/picketbox-4.1.1.Final-redhat-1.jar:/apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/picketbox/main/picketbox-commons-1.0.0.final-redhat-3.jar:/apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/picketbox/main/picketbox-infinispan-4.1.1.Final-redhat-1.jar:/apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/jboss/logging/main/jboss-logging-3.1.4.GA-redhat-2.jar org.picketbox.datasource.security.SecureIdentityLoginModule {{ mssql_password }}" 
+  register: encode_passstr
+
+- shell: "echo 'Encoded Password for database : {{ encode_passstr.stdout }}' | grep -o 'Encoded password.*'| cut -f2- -d: |sed -e 's/^[ \t]*//'"
+  register: encode_pass
+
+#####Added lc_mssql.xml
+- name: "Edit lc_mssql service File"
+  command: "cp {{ standaloneconf_loc }}lc_mssql.xml {{ standaloneconf_loc }}lc_mssql.xml_bck"
+
+#- lineinfile:
+#    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+#    #regexp: '^[ \t]+<connection-url>' 
+#    regexp: "{{ mssql_conn_regexp }}"    
+#    line: "{{mssql_conn_replace }}"          
+#  name: "Modify lc_mssql.xml"
+
+- replace:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    regexp: "{{ mssql_conn_regexp }}"
+    replace: "{{mssql_conn_replace }}"
+    backup: yes
+  name: "Modify lc_mssql.xml"
+
+
+
+- blockinfile:
+    content: |
+      <datasource jndi-name="java:/SQL_DS" pool-name="SQL_DS" enabled="true" use-java-context="true">
+      <connection-url>jdbc:sqlserver://experimentalsql.database.windows.net:1433;DatabaseName=af_AnsbleAem;encrypt=true;trustServerCertificate=true;hostNameInCertificate=eastus1-a.control.database.windows.net</connection-url>
+      <driver-class>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver-class>
+      <driver>sqlserver</driver>
+      <transaction-isolation>TRANSACTION_READ_COMMITTED</transaction-isolation>
+      <pool>
+          <min-pool-size>1</min-pool-size>
+          <max-pool-size>50</max-pool-size>
+      </pool>
+      <security>
+          <user-name>AnsbleAem@experimentalsql</user-name>
+          <password>Community4rceTest1</password>
+      </security>
+      <timeout>
+         <blocking-timeout-millis>20000</blocking-timeout-millis>
+         <idle-timeout-minutes>2</idle-timeout-minutes>
+      </timeout>
+      <statement>
+          <prepared-statement-cache-size>20</prepared-statement-cache-size>
+      </statement>
+      </datasource>
+    #path: "{{ apache_folder }}conf/extra/httpd-vhosts.conf"
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"
+    insertbefore: "<drivers>" 
+  ignore_errors: true
+  name: "Add block for lc_mssql "
+
+- replace:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    regexp: '^[ \t]+<module-option name="userName" value="adobe"/>'    
+    replace: '<module-option name="userName" value="{{ mssql_user }}"/>'
+  name: "Modify username lc_mssql.xml"
+
+- replace:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    regexp: '^[ \t]+<module-option name="password" value="5c2f412d6fa61722"/>'    
+    replace: '<module-option name="password" value="{{ encode_pass.stdout }}"/>'
+  name: "Modify password lc_mssql.xml"
+# some task remain here lc_mssql.xml

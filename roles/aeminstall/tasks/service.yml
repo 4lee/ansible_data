@@ -1,0 +1,10 @@
+---
+- name: "Add script to manage the service"
+  action: "template src={{ template_loc }} dest={{ aem_installloc }} mode=0755 owner=was group=was"
+
+- name: "Execute the stop script"
+  command: "su was -c 'sh {{ aem_installloc }}{{ service_file}} stop'"
+  ignore_errors: yes
+
+- name: "Execute the start script"
+  command: "su was -c 'sh {{ aem_installloc }}{{ service_file }} start'"

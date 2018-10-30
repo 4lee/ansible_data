@@ -1,0 +1,7 @@
+---
+# file: site.yml
+- import_playbook: aemaut.yml
+- import_playbook: aempub.yml
+- import_playbook: aempro.yml
+- import_playbook: pro_ssl_aut.yml
+- import_playbook: pro_ssl_pub.yml

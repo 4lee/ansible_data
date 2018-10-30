@@ -1,0 +1,21 @@
+#Users Last Values for CLI Properties. Please add password specific properties by referring to corresponding templates.
+#Tue Oct 24 18:04:19 EDT 2017
+LCHost=localhost
+LCPort=8080
+excludedSolutionComponents=ALC-LFS-LaunchPad,ALC-LFS-ConnectorMSSharePoint,ALC-LFS-ConnectorEMCDocumentum,ALC-LFS-ConnectorIBMFileNet,ALC-LFS-PDFGenerator,ALC-LFS-ConnectorIBMContentManager
+includeCentralMigrationService=false
+AdobeFontsDir=/apps/adobe/adobe_experience_manager_Forms/fonts
+customerFontsDir=
+systemFontsDir=/usr/share/fonts
+LCTempDir=/apps/adobe/adobe_experience_manager_Forms/Temp
+LCGlobalDocStorageDir=/apps/adobe/adobe_experience_manager_Forms/GDS
+EnableDocumentDBStorage=false
+enableFIPS=true
+LCAdminUserID=administrator
+LCAdminPassword=password
+contentRepository.rootDir=/apps/adobe/adobe_experience_manager_Forms/crx-repository
+ConfigureDocumentum=false
+ConfigureIBMCM=false
+lcGdsLocation=
+lcPrevGdsLocation=
+LCM.version=10.0

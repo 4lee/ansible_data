@@ -1,0 +1,10 @@
+---
+- name: Extracting curl
+  unarchive: "src={{ destination_folder }}apache_softwares/curl-7.58.0.tar.gz dest={{ destination_folder }}apache_softwares/ copy=no"
+
+- name: Install curl
+  command: "{{ item }} chdir={{ destination_folder }}apache_softwares/curl-7.58.0"
+  with_items:
+  - ./configure --with-ssl=/apps/openssl/1.0.1e --prefix=/apps/curl/7.58.0
+  - /usr/bin/make
+  - /usr/bin/make install

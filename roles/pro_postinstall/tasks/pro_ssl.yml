@@ -1,0 +1,64 @@
+---
+- name: "install updates"
+  yum: name=epel-release state=latest
+
+- name: "install updates"
+  yum: name=python-pip state=latest
+
+- name: "install pexpect"
+  pip:
+    name: pexpect
+
+- name: "Case insensitive password string match"
+  shell: "echo 'changeit' | {{ java_bin }}/keytool -genkey -keystore {{ java_bin }}/ansible.keystore -storepass changeit -keyalg RSA -alias ansible -validity 1500 -dname 'cn=FAMSDEVAUT1,ou=IT,dc=FAMS,dc=USAF' -ext SAN=dns:devfams.communityforce.com,ip:10.0.1.18"
+
+- name: "Copy keytools"
+  command: "{{ item }} chdir={{ java_bin }}"
+  with_items:
+  - "cp -rp {{ java_bin }}/ansible.keystore  {{ adobe_loc }}jboss/standalone/configuration"
+ 
+- name: "Create LC_cert.cer"
+  shell: "echo 'changeit' | {{ java_bin }}/keytool -export -alias ansible -file {{ java_bin }}/LC_cert.cer -keystore {{ adobe_loc }}jboss/standalone/configuration/ansible.keystore"
+
+- name: "Copy keytools"
+  command: "{{ item }} chdir={{ java_bin }}"
+  with_items:
+  - "cp -rp {{ java_bin }}/LC_cert.cer {{ adobe_loc }}jboss/standalone/configuration"
+
+- name: "Import Keytool"
+  shell: "{ echo 'changeit'; echo 'yes'; } | {{ java_bin }}/keytool -import -alias ansible -file {{ adobe_loc }}jboss/standalone/configuration/LC_cert.cer -keystore {{ javadest_folder }}/java/jre/lib/security/cacerts"
+
+- name: "Copy and change ownership"
+  command: "{{ item }} chdir={{ adobe_loc }}jboss/standalone/configuration/"
+  with_items:
+  - chmod 775 ansible.keystore LC_cert.cer
+  - cp -rp lc_mssql.xml lc_mssql.xml_org
+
+
+- name: "Insert ssl certificate in lc_mssql.xml"
+  lineinfile:
+    path: "{{ adobe_loc }}jboss/standalone/configuration/lc_mssql.xml"
+    line: "{{ ssl_certificate_block }}"
+    insertafter: "{{ connector_http }}"
+
+- name: "Https block in lc_mssql.xml"
+  lineinfile:
+    path: "{{ adobe_loc }}jboss/standalone/configuration/lc_mssql.xml"
+    line: "{{ connector_https }}"
+    insertafter: "{{ connector_http }}"
+
+#- name: "Insert ssl certificate and Https block in lc_mssql.xml"
+#  blockinfile:
+#    path: "{{ adobe_loc }}jboss/standalone/configuration/lc_mssql.xml"
+#    marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"
+#    insertafter: "{{ connector_http }}"
+#    content: |
+#      "{{ connector_https }}"
+#      "{{ ssl_certificate_block }}"
+#
+
+- name: "Jboss Restart"
+  command: "{{ item }} chdir={{ adobe_loc }}/jboss/bin/init.d"
+  with_items:
+  - ./jbossas7 Stop
+  - nohup ./jbossas7 Start

@@ -1,0 +1,10 @@
+---
+- name: Extracting httpd
+  unarchive: 'src={{ destination_folder }}apache_softwares/httpd-2.4.6.tar.bz2 dest={{ destination_folder }}apache_softwares/ copy=no'
+
+- name: Install httpd
+  command: '{{ item }} chdir={{ destination_folder }}apache_softwares/httpd-2.4.6'
+  with_items:
+  - ./configure --prefix=/apps/apache/2.4.6 --with-apr=/apps/apr/1.4.8 --with-apr-util=/apps/apr-util-1.5.2 -with-pcre=/apps/pcre/8.00 --with-ssl=/app/openssl/1.0.1e --enable-ssl --enable-rewrite --enable-so
+  - /usr/bin/make
+  - /usr/bin/make install

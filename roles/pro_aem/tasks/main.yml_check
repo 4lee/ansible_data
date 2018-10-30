@@ -1,0 +1,59 @@
+---
+- name: "Encrypt your database password by using below command"
+  command: "{{ jar_command }} {{ mssql_password }}"
+  register: encode_passstr
+
+- shell: "echo 'Encoded Password for database : {{ encode_passstr.stdout }}' | grep -o 'Encoded password: .*'| cut -f2- -d:|sed -e 's/^[ \t]*//'"
+  register: encode_pass
+
+- name: "Edit lc_mssql service File"
+  command: "cp {{ standaloneconf_loc }}lc_mssql.xml {{ standaloneconf_loc }}lc_mssql.xml_bck"
+
+- replace:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    regexp: "{{ mssql_conn_regexp }}"
+    replace: "{{mssql_conn_replace }}"
+    backup: yes
+  name: "Modify lc_mssql.xml"
+
+- blockinfile:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    marker: ""
+    insertbefore: '<drivers>'
+    block: |
+      <datasource jndi-name="java:/SQL_DS" pool-name="SQL_DS" enabled="true" use-java-context="true">
+      <connection-url>jdbc:sqlserver://experimentalsql.database.windows.net:1433;DatabaseName=af_AnsbleAem;encrypt=true;trustServerCertificate=true;hostNameInCertificate=eastus1-a.control.database.windows.net</connection-url>
+      <driver-class>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver-class>
+      <driver>sqlserver</driver>
+      <transaction-isolation>TRANSACTION_READ_COMMITTED</transaction-isolation>
+      <pool>
+          <min-pool-size>1</min-pool-size>
+          <max-pool-size>50</max-pool-size>
+      </pool>
+      <security>
+          <user-name>AnsbleAem@experimentalsql</user-name>
+          <password>Community4rceTest1</password>
+      </security>
+      <timeout>
+         <blocking-timeout-millis>20000</blocking-timeout-millis>
+         <idle-timeout-minutes>2</idle-timeout-minutes>
+      </timeout>
+      <statement>
+          <prepared-statement-cache-size>20</prepared-statement-cache-size>
+      </statement>
+      </datasource>
+  ignore_errors: true
+  name: "Add block for lc_mssql "
+
+- lineinfile:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    regexp: '^[\t]+<module-option name="userName"'    
+    line: '<module-option name="userName" value="{{ mssql_user }}"/>'
+  name: "Modify username lc_mssql.xml"
+
+- lineinfile:
+    path: "{{ standaloneconf_loc }}lc_mssql.xml"
+    regexp: '^[\t]+<module-option name="password"'    
+    line: '<module-option name="password" value="{{ encode_pass.stdout }}"/>'
+  name: "Modify password lc_mssql.xml"
+

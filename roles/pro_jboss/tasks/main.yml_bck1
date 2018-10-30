@@ -1,0 +1,5 @@
+---
+- include_tasks: clioption.yml
+
+- name: "Remove character encoding"
+  command: "dos2unix /apps/adobe/adobe_experience_manager_Forms/configurationManager/bin/ConfigurationManagerCLI.sh"

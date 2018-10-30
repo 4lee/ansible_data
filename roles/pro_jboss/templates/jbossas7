@@ -1,0 +1,205 @@
+#!/bin/bash
+#
+# JBoss Standalone control script
+#
+# chkconfig: - 80 20
+# description: JBoss AS Standalone
+# processname: Standalone
+
+# Source function library.
+. /etc/init.d/functions
+
+# Load Java configuration.
+# [ -r /etc/java/java.conf ] && . /etc/java/java.conf
+# export JAVA_HOME
+
+# Load JBoss AS init.d configuration.
+if [ -z "$JBOSS_CONF" ]; then
+  JBOSS_CONF=""{{ jboss_binloc }}"init.d/jboss-as.conf"
+fi
+
+[ -r "$JBOSS_CONF" ] && . "${JBOSS_CONF}"
+
+# Set defaults.
+
+if [ -z "$JBOSS_HOME" ]; then
+  JBOSS_HOME="{{  adobe_loc }}"jboss
+fi
+export JBOSS_HOME
+
+if [ -z "$JBOSS_PIDFILE" ]; then
+ JBOSS_PIDFILE="{{  adobe_loc }}"jboss/log/jboss-as-standalone.pid
+fi
+export JBOSS_PIDFILE
+
+if [ -z "$JBOSS_CONSOLE_LOG" ]; then
+  JBOSS_CONSOLE_LOG="{{  adobe_loc }}"jboss/log/console.log
+fi
+
+if [ -z "$STARTUP_WAIT" ]; then
+  STARTUP_WAIT=1500
+fi
+
+if [ -z "$SHUTDOWN_WAIT" ]; then
+  SHUTDOWN_WAIT=1500
+fi
+
+if [ -z "$JBOSS_CONFIG" ]; then
+  JBOSS_CONFIG=lc_mssql.xml
+  JBOSS_IP={{ jboss_ip }}
+fi
+JBOSS_SCRIPT=$JBOSS_HOME/bin/standalone.sh
+
+JBOSS_MARKERFILE=$JBOSS_HOME/standalone/tmp/startup-marker
+
+prog='jbossA'
+currenttime=$(date +%s%N | cut -b1-13)
+
+CMD_PREFIX=''
+
+start() {
+  echo -n "Starting $prog: "
+  if [ -f $JBOSS_PIDFILE ]; then
+    read ppid < $JBOSS_PIDFILE
+    if [ `ps --pid $ppid 2> /dev/null | grep -c $ppid 2> /dev/null` -eq '1' ]; then
+      echo -n "$prog is already running"
+      failure
+      return 1
+    else
+      rm -f $JBOSS_PIDFILE
+    fi
+  fi
+  echo $JBOSS_CONSOLE_LOG
+  mkdir -p $(dirname $JBOSS_CONSOLE_LOG)
+  cat /dev/null > $JBOSS_CONSOLE_LOG
+
+  mkdir -p $(dirname $JBOSS_PIDFILE)
+#  chown $JBOSS_USER $(dirname $JBOSS_PIDFILE) || true
+  #$CMD_PREFIX JBOSS_PIDFILE=$JBOSS_PIDFILE $JBOSS_SCRIPT 2>&1 > $JBOSS_CONSOLE_LOG &
+  #$CMD_PREFIX JBOSS_PIDFILE=$JBOSS_PIDFILE $JBOSS_SCRIPT &
+ # if [ ! -z "$JBOSS_USER" ]; then
+    if [ -r /etc/rc.d/init.d/functions ]; then
+
+      daemon LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE=$JBOSS_PIDFILE $JBOSS_SCRIPT -b $JBOSS_IP -c $JBOSS_CONFIG > $JBOSS_CONSOLE_LOG 2>&1 &
+    else
+      su -c "LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE=$JBOSS_PIDFILE $JBOSS_SCRIPT -b $JBOSS_IP -c $JBOSS_CONFIG" > $JBOSS_CONSOLE_LOG 2>&1 &
+    fi
+ # fi
+
+  count=0
+  launched=false
+
+  until [ $count -gt $STARTUP_WAIT ]
+  do
+    sleep 1
+    let count=$count+1;
+    if [ -f $JBOSS_MARKERFILE ]; then
+
+      markerfiletimestamp=$(grep -o '[0-9]*' $JBOSS_MARKERFILE) > /dev/null
+
+      if [ "$markerfiletimestamp" -gt "$currenttime" ] ; then
+	 grep -i 'success:' $JBOSS_MARKERFILE > /dev/null
+        if [ $? -eq 0 ] ; then
+          launched=true
+          break
+        fi
+      fi
+    fi
+  done
+
+  if [ "$launched" = "false" ] ; then
+    echo "$prog started with errors, please see server log for details"
+  fi
+
+  success
+  echo
+  return 0
+}
+
+stop() {
+  echo -n $"Stopping $prog: "
+  count=0;
+
+  if [ -f $JBOSS_PIDFILE ]; then
+    read kpid < $JBOSS_PIDFILE
+    let kwait=$SHUTDOWN_WAIT
+
+    # Try issuing SIGTERM
+
+   # kill -15 $kpid
+    sudo bash "{{ jboss_binloc }}"jboss-cli.sh --connect command=:shutdown
+    until [ `ps --pid $kpid 2> /dev/null | grep -c $kpid 2> /dev/null` -eq '0' ] || [ $count -gt $kwait ]
+    do
+      sleep 1
+      let count=$count+1;
+    done
+
+    if [ $count -gt $kwait ]; then
+      kill -9 $kpid
+    fi
+  fi
+  rm -f $JBOSS_PIDFILE
+  success
+  echo
+}
+
+status() {
+  if [ -f $JBOSS_PIDFILE ]; then
+    read ppid < $JBOSS_PIDFILE
+    if [ `ps --pid $ppid 2> /dev/null | grep -c $ppid 2> /dev/null` -eq '1' ]; then
+      echo "$prog is running (pid $ppid)"
+      return 0
+    else
+      echo "$prog dead but pid file exists"
+      return 1
+    fi
+  fi
+  echo "$prog is not running"
+  return 3
+}
+
+case "$1" in
+  Start)
+      start
+      ;;
+  Stop)
+      stop
+      ;;
+  Restart)
+      $0 stop
+      $0 start
+      ;;
+  Status)
+      status
+      ;;
+  ConsoleLog)
+      "tail -1500f {{ ConsoleLog }}"
+      ;;
+   HostControllerLog)
+      "tail -1500f {{ HostControllerLog }}"
+      ;;
+   ProcessControllerLog)
+      "tail -1500f {{ ProcessControllerLog }}"
+      ;;
+  ServerLog)
+     "tail -1500f {{ ServerLog }}"
+     ;;
+  CrxErrorLog)
+    "tail -1500f {{ CrxErrorLog }}"
+    ;;
+  *)
+      ## If no parameters are given, print which are available.
+      echo "Usage: $0 {
+
+	  Start       -- To start JBOSS
+	  Stop        -- To stop JBOSS
+	  Status      -- To check JBOSS Status
+	  Restart     -- To Restart JBOSS
+	  ConsoleLog  -- To tail/check last 1500 lines of console log
+	  ServerLog   -- To tail/check last 1500 lines of Server log
+	  CrxErrorLog -- To tail/check last 1500 lines of CRX Error log
+
+	 }"
+      exit 1
+      ;;
+esac

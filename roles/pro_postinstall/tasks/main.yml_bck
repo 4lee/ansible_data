@@ -1,0 +1,20 @@
+---
+- name: "Download mysql jdbc tar"
+  get_url: "url=https://jar-download.com/cache_jars/com.microsoft.sqlserver/mssql-jdbc/6.2.2.jre8/jar_files.zip dest={{ home_loc }}"
+
+- name: "Unarchive jar files"
+  unarchive: "src={{ home_loc }}jar_files.zip dest={{ home_loc }}"
+
+- name: "Post installation Commands"
+  command: "{{ item }} chdir={{ home_loc }}"
+  with_items:
+    - 'curl -u admin:admin -F "jcr:primaryType=sling:OsgiConfig" -F "alias=/crx/server" -F "dav.create-absolute-uri=true" -F "dav.create-absolute-uri@TypeHint=Boolean" http://{{ base_url }}/lc/apps/system/config/org.apache.sling.jcr.davex.impl.servlets.SlingDavExServlet'
+    - "curl -u admin:admin http://{{ base_url }}/lc/crx/explorer/ui/usereditor_list.jsp -H 'Content-Type: multipart/form-data' -H 'Referer: http://{{ base_url }}/lc/crx/explorer/ui/usereditor_list.jsp' -F Path=/home/users -F action_ops=create -F FormEncoding=UTF-8 -F uid=data -F createModus=8 -Fmembership=administrators"
+    - 'curl -u admin:admin -FaddMembers=data http://{{ base_url }}/lc/home/groups/a/administrators.rw.html'
+    - 'curl -u admin:admin -F action=install -F bundlestartlevel=20 -F bundlefile=@{{ mysql_jdbc_jar }} http://{{ base_url }}/lc/system/console/bundles'
+    - 'curl -u admin:admin http://{{ base_url }}/lc/system/console/bundles/com.microsoft.sqlserver.mssql-jdbc -F action=start'
+    - 'curl -u admin:admin -F file=@"{{ aem63-component_zip }}" -F name="aem63 core components" -F force=true -F install=true http://{{ base_url }}/lc/crx/packmgr/service.jsp'
+    - 'curl -u admin:admin -F file=@"{{ acs_aem_zip }}" -F name="aem63 core components" -F force=true -F install=true http://{{ base_url }}/lc/crx/packmgr/service.jsp'
+    - 'curl -u admin:admin -F "jcr:primaryType=sling:OsgiConfig" -F "jdbc.password={{ mssql_password }}" -F "jdbc.driver.class=com.microsoft.sqlserver.jdbc.SQLServerDriver" -F "datasource.name=SQL_SERVER_DS" -F "jdbc.connection.uri={{ mssql_connectionURL }}" -F "jdbc.username={{ mssql_user }}" -F "pool.size=500" http://{{ base_url }}/lc/apps/system/config/com.day.commons.datasource.jdbcpool.JdbcPoolService-jdbcpool00001'
+    - 'curl -u admin:admin -F "jcr:primaryType=sling:OsgiConfig" -F "jdbc.password={{ mssql_password }}" -F "jdbc.driver.class=com.microsoft.sqlserver.jdbc.SQLServerDriver" -F "datasource.name=SQL_SERVER_DS" -F "jdbc.connection.uri=jdbc:sqlserver://{{ mssql_connectionURL }}:1433;DatabaseName=af_AnsbleAem;encrypt=true;trustServerCertificate=false;hostNameInCertificate=eastus1-a.control.database.windows.net" -F "jdbc.username={{ mssql_user }}" -F "pool.size=500" http://{{ base_url }}/lc/apps/system/config/com.day.commons.datasource.jdbcpool.JdbcPoolService-jdbcpool00001'
+

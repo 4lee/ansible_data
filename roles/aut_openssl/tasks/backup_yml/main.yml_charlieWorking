@@ -1,0 +1,170 @@
+---
+- name: "Import Variable"
+  include_vars:
+    file: "../vars/aemaut.yml"
+    name: vardata
+
+- name: "Copy Dispatcher from source"
+  copy:
+    src: "{{ vardata.dispatcher_loc }}"
+    dest: "{{ vardata.apache_folder }}/modules"
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: "{{ vardata.apache_conf_file }}"
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: '#Include conf/extra/httpd-vhosts.conf', replace: 'Include conf/extra/httpd-vhosts.conf' }
+    - { regexp1: '#Include conf/extra/httpd-ssl.conf', replace: 'Include conf/extra/httpd-ssl.conf' }
+    - { regexp1: '#LoadModule ssl_module modules/mod_ssl.so', replace: 'LoadModule ssl_module modules/mod_ssl.so' }
+    - { regexp1: '#LoadModule rewrite_module modules/mod_rewrite.so', replace: 'LoadModule rewrite_module modules/mod_rewrite.so' }
+    - { regexp1: '#LoadModule dispatcher_module {{ apache_folder }}/modules/dispatcher-apache2.4-4.2.3.so', replace: 'LoadModule dispatcher_module {{ apache_folder }}/modules/dispatcher-apache2.4-4.2.3.so' }
+    - { regexp1: '#LoadModule proxy_module modules/mod_proxy.so', replace: 'LoadModule proxy_module modules/mod_proxy.so' }
+    - { regexp1: '#LoadModule proxy_http_module modules/mod_proxy_http.so', replace: 'LoadModule proxy_http_module modules/mod_proxy_http.so' }
+    - { regexp1: 'Listen 80', replace: 'Listen 127.0.0.1:80' }
+    - { regexp1: '#ServerName www.example.com:80', replace: 'ServerName 127.0.0.1:80' }
+
+- blockinfile:
+    content: |
+        LoadModule dispatcher_module {{ vardata.apache_folder }}/modules/dispatcher-apache2.4-4.2.3.so
+        <IfModule disp_apache2.c>
+        #Location of the configuration file. eg:'conf/dispatcher.any'
+        DispatcherConfig {{ vardata.dispatcher_file }}
+        #Location of the dispatcher log file. eg:'logs/dispatcher.log'
+        DispatcherLog {{ apache_folder }}/logs/dispatcher.log
+
+        # log level for the dispatcher log
+        # 0 errors
+        # 1 warnings
+        # 2 Infos
+        # 3 Debug
+        DispatcherLogLevel 3
+
+        # if turned to 1, the dispatcher looks like a normal module
+        #DispatcherNoServerHeader
+
+        # if turned to 1, request to / are not handled by the dispatcher
+        # use the mod_alias then for the correct mapping
+        DispatcherDeclineRoot 0
+
+        # if turned to 1, the dispatcher uses the URL already processed
+        # by handlers preceeding the dispatcher (i.e. mod_rewrite)
+        # instead of the original one passed to the web server.
+        DispatcherUseProcessedURL 0
+
+        # if turned to 1, the dispatcher does not spool an error
+        # response to the client (where the status code is greater
+        # or equal than 400), but passes the status code to
+        # Apache, which e.g. allows an ErrorDocument directive
+        # to process such a status code.
+        DispatcherPassError 0
+        </IfModule>
+
+        <Directory />
+
+        <IfModule disp_apache2.c>
+        # enable dispatcher for ALL request. if this is too restrictive,
+        # move it to another location
+        SetHandler dispatcher-handler
+        </IfModule>
+        </Directory>
+    insertafter: "LoadModule rewrite_module modules/mod_rewrite.so"
+    path: {{ vardata.apache_conf_file }}
+  ignore_errors: true
+  name: "ADD dispatcher module in httpd.conf"
+
+- blockinfile:
+    content: |
+        <IfModule prefork.c>
+        StartServers       5
+        MinSpareServers    10
+        MaxSpareServers   10
+        MaxClients       256
+        KeepAliveTimeOut 15
+        TimeOut 300
+        KeepAlive on
+        KeepAliveTimeOut 15
+        LimitRequestBody 1
+        LimitRequestFields 0
+        LimitRequestFieldSize 8190
+        LimitRequestLine 8190
+        MaxKeepAliveRequests 200
+        </IfModule>
+    path: {{ vardata.apache_conf_file }}
+  ignore_errors: true
+  name: "APPEND DATA"
+
+- name: "Copy dispatcher.so "
+  copy:
+    src: {{ vardata.dispatcher_src_file }}
+    dest: {{ vardata.apache_conf_folder }}
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: {{ vardata.dispatcher_file }}
+    regexp: "/hostname \"182.163.1.22\""
+    replace: "/hostname \"localhost\""
+
+- blockinfile:
+    content: |
+        <VirtualHost 127.0.0.1:80>
+            #ServerAdmin webmaster@dummy-host.example.com
+            DocumentRoot "{{ apache_folder }}/htdocs"
+            #ServerName dummy-host.example.com
+            #ServerAlias www.dummy-host.example.com
+            ErrorLog "{{ apache_folder }}/logs/error_log"
+            CustomLog "{{ apache_folder }}/logs/access_log" common
+            ServerName 127.0.0.1:80
+        ProxyTimeout 360
+                ProxyPass / http://localhost:4502/ timeout=360 connectiontimeout=5 retry=310
+                ProxyPassReverse / http://localhost:4502/
+
+
+             ErrorLog  "|{{ apache_folder }}/bin/rotatelogs -l {{ apache_folder }}/logs/Customized_error.log.%Y-%m-%d-%Z 86400"
+             CustomLog "|{{ apache_folder }}/bin/rotatelogs -l {{ apache_folder }}/logs/Customized_access.log.%Y-%m-%d-%Z 86400" common
+
+        <IfModule mod_rewrite.c>
+        RewriteEngine on
+        #RewriteBase /
+        #RewriteCond %{HTTP_HOST} !^www\. [NC]
+        #RewriteRule ^(.*)$ https://www.%{HTTP_HOST}/$1 [R=301,L]
+        #RewriteCond %{REQUEST_METHOD} ^TRACK|PUT|TRACE|DELETE|HEAD|OPTIONS|CONNECT
+        #RewriteRule [^a-zA-Z0-9\/\-\_\.] - [F,L]
+        #RewriteRule \.\. - [F,L]
+        #RewriteRule adduser|chmod|passwd|htpasswd|httpd\.conf - [F,L]
+        #RewriteOptions Inherit
+        #RewriteLog  "|{{ apache_folder }}/bin/rotatelogs  -l {{ apache_folder }}/logs/rewrite.log.%Y-%m-%d-%Z 86400"
+        #RewriteLogLevel 2
+       </IfModule>
+       </VirtualHost>
+    path: {{ vardata.apache_folder }}/conf/extra/httpd-vhosts.conf
+  ignore_errors: true
+  name: "APPEND DATA"
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: {{ vardata.apache_conf_file }}
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: 'Listen 443', replace: 'Listen 127.0.0.1:443' }
+    - { regexp1: 'ServerName www.example.com:443', replace: 'ServerName 127.0.0.1:443' }
+    - { regexp1: 'SSLCertificateFile \"{{ vardata.apache_conf_folder }}/server.crt\"', replace: 'SSLCertificateFile "{{ vardata.apache_conf_folder }}/certs/server.crt"' }
+    - { regexp1: 'SSLCertificateKeyFile "{{ vardata.apache_conf_folder }}/server.key"', replace: 'SSLCertificateKeyFile "{{ vardata.apache_conf_folder }}/certs/server.key"' }
+
+- name: "Certs directory creation"
+  command: "{{ item }} chdir={{ vardata.apache_folder }}/conf/"
+  with_items:
+  - mkdir certs
+
+- name: "Configure openssl"
+  command: "{{ item }} chdir={{ vardata.apache_folder }}/conf/certs"
+  with_items:
+  - openssl genrsa -out server.key 3072
+  - openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=CommunityForce Ltd/OU=FAMS/CN=famspublisher.communityforce.com"
+
+- name: "Start apache"
+  command: "{{ item }} chdir={{ vardata.apache_folder }}/bin"
+  with_items:
+  - ./apachectl start

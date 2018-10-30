@@ -1,0 +1,11 @@
+---
+- 
+  name: Extracting pcre
+  unarchive: "src={{ destination_folder }}apache_softwares/pcre-8.00.tar.gz dest={{ destination_folder }}apache_softwares/ copy=no"
+
+- name: Install PCRE
+  command: "{{ item }} chdir={{ destination_folder }}apache_softwares/pcre-8.00"
+  with_items:
+  - ./configure --prefix=/apps/pcre/8.00
+  - /usr/bin/make
+  - /usr/bin/make install

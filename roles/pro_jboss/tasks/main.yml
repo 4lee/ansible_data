@@ -1,0 +1,107 @@
+---
+- name: "Modify standalone.conf"
+  replace:
+    dest: "{{ jboss_binloc }}standalone.conf"
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: 'JAVA_OPTS="-Xms1024m -Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError -XX:+UseCompressedOops"', replace: '{{ jboss_standalone1 }}' }
+    - { regexp1: 'JAVA_OPTS="$JAVA_OPTS -DentityExpansionLimit=10000"' , replace: '{{ jboss_standalone2 }}' }
+    - { regexp1: 'JAVA_OPTS="$JAVA_OPTS -Djboss.server.default.config=standalone.xml"' , replace: '{{ jboss_standalone3 }}' }
+
+- name: "Jboss_as file"
+  file: "path={{ jboss_binloc}}init.d/jboss-as.conf state=touch"
+
+- name: "ADD JBOSS as block in jboss-as.conf file" 
+  blockinfile:
+    content: |
+       # General configuration for the init.d scripts,
+       # not necessarily for JBoss EAP itself.
+          	
+       ## The username who should own the process.
+       # JBOSS_USER=jboss-as
+          
+       ## The amount of time to wait for startup
+       # STARTUP_WAIT=600
+          
+       ## The amount of time to wait for shutdown
+       # SHUTDOWN_WAIT=600
+          
+       ## Location to keep the console log
+       # JBOSS_CONSOLE_LOG="{{ adobe_loc }}jboss/console.log" 
+    path: "{{ jboss_binloc}}init.d/jboss-as.conf"
+  ignore_errors: true
+
+- name: "Create Jboss service File"
+  action: "template src={{ jbosstemplate_loc }} dest={{ jboss_binloc}}init.d/ mode=0775"
+
+- name: "Change JBoss bin folder permission"
+  command: "chmod -R 775 {{ jboss_binloc }}"
+
+- name: "Start Jboss service"
+  command: "{{ item }} chdir={{ jboss_binloc }}init.d"
+  with_items:
+  - ./jbossas7 Stop
+  - nohup ./jbossas7 Start
+  - ./jbossas7 Status
+  ignore_errors: true
+
+- name: install updates
+  yum: name=dos2unix state=latest
+  
+#- name: "Run Configuration Manager Part 1"
+- include_tasks: clioption.yml
+
+- name: "Change JBoss folder permission"
+  command: "chmod -R 775 {{ confBin_loc }}"
+
+- name: "Remove character encoding"
+  command: "dos2unix {{ confBin_loc }}ConfigurationManagerCLI.sh"
+
+- name: "Configuration management service"
+  command: "{{ item }} chdir='{{ confBin_loc }}'"
+  with_items:
+  - "./ConfigurationManagerCLI.sh configureLiveCycle -f clioptions.txt"
+  - "./ConfigurationManagerCLI.sh configureCRXRepository -f clioptions.txt"
+
+- name: "Stop Jboss service"
+  command: "{{ item }} chdir='{{ jboss_binloc }}init.d/'"
+  with_items:
+  - "sh jbossas7 Stop"
+
+- name: "Synchronize install  directories"
+  synchronize:
+    src: "{{ adobe_loc }}configurationManager/export/crx-quickstart/install"
+    dest: "{{ adobe_loc }}crx-repository"
+  delegate_to: "{{ inventory_hostname }}"
+
+
+- name: "Copy Content of export and Deploy EAR files manually"
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    remote_src: yes
+  with_items:
+    - { src: '{{ adobe_loc }}configurationManager/export/adobe-livecycle-cq-author.ear', dest: '{{ adobe_loc }}jboss/standalone/deployments/'}
+    - { src: '{{ adobe_loc }}configurationManager/export/adobe-livecycle-jboss.ear', dest: '{{ adobe_loc }}jboss/standalone/deployments/'}
+    - { src: '{{ adobe_loc }}configurationManager/export/adobe-livecycle-native-jboss-x86_linux.ear', dest: '{{ adobe_loc }}jboss/standalone/deployments/'}
+    - { src: '{{ adobe_loc }}configurationManager/export/adobe-workspace-client.ear', dest: '{{ adobe_loc }}jboss/standalone/deployments/'}
+
+
+- name: "Start Jboss service"
+  command: "{{ item }} chdir='{{ jboss_binloc }}init.d/'"
+  with_items:
+  - nohup ./jbossas7 Start 
+  - ./jbossas7 Status
+
+
+- name: "Configuration management service"
+  command: "{{ item }} chdir='{{ confBin_loc }}'"
+  with_items:
+  - "sleep 30m"
+  - "./ConfigurationManagerCLI.sh initializeLiveCycle -f clioptions.txt"
+  - "./ConfigurationManagerCLI.sh validateLiveCycleServer -f clioptions.txt"
+  - "./ConfigurationManagerCLI.sh deployLiveCycleComponents -f clioptions.txt"
+  - "./ConfigurationManagerCLI.sh validateLiveCycleComponentDeployment -f clioptions.txt"
+
+

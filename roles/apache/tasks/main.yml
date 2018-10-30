@@ -1,0 +1,45 @@
+--- 
+- 
+  name: "copy and unarchives apache tar"
+  unarchive: 
+    dest: "{{ destination_folder }}"
+    remote_src: false
+    src: "{{ apache_loc }}"
+- 
+  name: "remove the openssl package"
+  yum: 
+    name: openssl
+    state: absent
+- 
+  name: "install the 'Development tools' package group"
+  yum: 
+    name: "@Development tools"
+    state: present
+- 
+  name: "install Yum dependencies"
+  with_items: 
+    - openssl-devel
+    - expat-devel
+    - libxml2
+    - libxml2-devel
+    - libxml2-python
+    - libxml2-static
+  yum: "pkg={{item}} state=installed"
+- 
+  file: "dest={{ destination_folder }}apache_softwares owner={{ ap_owner_user }} group={{ ap_group_user }} mode=u=rwX,g=rX,o=rX recurse=yes"
+  name: "Provide privileges"
+- 
+  include_tasks: install_apr.yml
+- 
+  include_tasks: install_apr_utils.yml
+- 
+  include_tasks: install_pcre.yml
+- 
+  include_tasks: install_curl.yml
+- 
+  include_tasks: install_openssl.yml
+- 
+  include_tasks: install_apache.yml
+- 
+  include_tasks: install_modsecurity.yml
+

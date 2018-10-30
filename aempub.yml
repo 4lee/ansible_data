@@ -1,0 +1,10 @@
+---
+- hosts: AemPub
+  become: true
+  roles:
+    - checkavail
+    #- sysupdate
+    #- java
+    #- aeminstall
+    #- apache
+    #- pub_openssl

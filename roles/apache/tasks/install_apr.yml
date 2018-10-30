@@ -1,0 +1,12 @@
+--- 
+- 
+ name: "Extracting apr"
+ unarchive: "src={{ destination_folder }}apache_softwares/apr-1.4.8.tar.gz dest={{ destination_folder }}apache_softwares/ copy=no"
+ 
+- 
+ command: "{{ item }} chdir={{ destination_folder }}apache_softwares/apr-1.4.8"
+ name: "Install APR"
+ with_items: 
+   - "./configure --prefix={{ destination_folder }}apr/1.4.8"
+   - /usr/bin/make
+   - "/usr/bin/make install"

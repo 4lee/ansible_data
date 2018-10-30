@@ -1,0 +1,80 @@
+---
+- name: "Copy Dispatcher from source"
+  copy:
+    src: "{{ dispatcher_loc }}"
+    dest: "{{ apache_folder }}modules"
+
+- shell: "ifconfig | grep -A 1 'eth0' | tail -n 1 | awk '{print $2}'"
+  register: privateip
+
+- shell: "echo 'my private IP is {{ private_ip }}'"
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: "{{ apache_conf_file }}"
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp1: '#{{ httpd_vhost }}', replace: '{{ httpd_vhost }}' }
+    - { regexp1: '#{{ httpd_ssl }}', replace: '{{ httpd_ssl }}' }
+    - { regexp1: '#{{ ssl_module }}', replace: '{{ ssl_module }}' }
+    - { regexp1: '#{{ rewrite_module }}', replace: '{{ rewrite_module }}' }
+    - { regexp1: '#{{ socache_shmcb_module }}', replace: '{{ socache_shmcb_module }}' }
+    - { regexp1: '#{{ proxy_module }}', replace: '{{ proxy_module }}' }
+    - { regexp1: '#{{ proxy_http_module }}', replace: '{{ proxy_http_module }}' }
+    - { regexp1: '{{ listen_ip }}', replace: 'Listen {{ private_ip }}:80' }
+    - { regexp1: '#{{ server_name }}', replace: 'ServerName {{ private_ip }}:80' }
+
+- name:
+  lineinfile:
+    path: "{{ apache_conf_file }}"
+    line: "{{ dispatcher_mod }}"    
+    insertafter: "LoadModule rewrite_module modules/mod_rewrite.so"
+
+- name: "Copy dispatcher.so "
+  copy:
+    src: "{{ dispatcher_src_file }}"
+    dest: "{{ apache_conf_folder }}"
+
+#- name: "Include modules in apache conf file"
+#  replace:
+#    dest: "{{ dispatcher_file_pub }}" 
+#    regexp: "{{ item.regexp1 }}"
+#    replace: "{{ item.replace1 }}"
+#  with_items:
+#    - { regexp1: "/hostname \"182.163.1.22\"", replace1: "/hostname \"{{ private_ip }}\"" }
+#    - { regexp1: "/type \"deny\"", replace1: "/type \"allow\"" }
+#    - { regexp1: "/hostname \"182.163.1.20\"", replace1: "/hostname \"{{ author_privateip }}\"" }
+
+- include_tasks: add_dispatcher_block.yml
+- include_tasks: dispatcher_conf.yml
+
+- name: "Include modules in apache conf file"
+  replace:
+    dest: "{{ apache_sslconf_file }}"
+    regexp: "{{ item.regexp1 }}"
+    replace: "{{ item.replace1 }}"
+  with_items:
+    - { regexp1: 'Listen 443', replace1: 'Listen {{ private_ip }}:443' }
+    - { regexp1: 'ServerName www.example.com:443', replace1: 'ServerName {{ private_ip }}:443' }
+    - { regexp1: '<VirtualHost _default_:443>', replace1: '<VirtualHost {{ private_ip }}:443>' }
+    - { regexp1: 'SSLCertificateFile \"{{ apache_conf_folder }}/server.crt\"', replace1: 'SSLCertificateFile "{{ apache_conf_folder }}/certs/server.crt"' }
+    - { regexp1: 'SSLCertificateKeyFile "{{ apache_conf_folder }}/server.key"', replace1: 'SSLCertificateKeyFile "{{ apache_conf_folder }}/certs/server.key"' }
+
+- name: "Certs directory creation"
+  #command: "{{ item }} chdir={{ apache_folder }}conf/"
+  file: "path={{ apache_folder }}conf/certs state=directory"
+  #with_items:
+  #- mkdir certs
+
+- name: "Configure openssl"
+  command: "{{ item }} chdir={{ apache_folder }}conf/certs"
+  with_items:
+  - "{{ openssl_cmd1 }}"
+  - "{{ openssl_cmd2 }}"
+
+- name: "Start apache"
+  command: "{{ item }} chdir={{ apache_folder }}bin"
+  with_items:
+  - ./apachectl stop
+  - ./apachectl start

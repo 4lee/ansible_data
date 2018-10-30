@@ -1,0 +1,10 @@
+---
+- name: Extracting modsecurity
+  unarchive: "src={{ destination_folder }}apache_softwares/modsecurity-2.9.2.tar.gz dest={{ destination_folder }}apache_softwares/ copy=no"
+
+- name: Install mod_security
+  command: "{{ item }} chdir={{ destination_folder }}apache_softwares/modsecurity-2.9.2"
+  with_items:
+  - ./configure --prefix=/apps/apache/2.4.6/conf/modsecurity --with-apxs=/apps/apache/2.4.6/bin/apxs --with-apr=/apps/apr/1.4.8 --with-curl=/apps/curl/7.58.0 --with-pcre=/apps/pcre/8.00 --with-apu=/apps/apr-util-1.5.2
+  - /usr/bin/make
+  - /usr/bin/make install

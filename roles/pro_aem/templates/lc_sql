@@ -1,0 +1,22 @@
+           <datasource jndi-name="java:/SQL_DS" pool-name="SQL_DS" enabled="true" use-java-context="true">
+           <connection-url>jdbc:sqlserver://experimentalsql.database.windows.net:1433;DatabaseName=af_AnsbleAem;encrypt=true;trustServerCertificate=true;hostNameInCertificate=eastus1-a.control.database.windows.net</connection-url>
+           <driver-class>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver-class>
+           <driver>sqlserver</driver>
+           <transaction-isolation>TRANSACTION_READ_COMMITTED</transaction-isolation>
+           <pool>
+               <min-pool-size>1</min-pool-size>
+               <max-pool-size>50</max-pool-size>
+           </pool>
+           <security>
+               <user-name>AnsbleAem@experimentalsql</user-name>
+               <password>Community4rceTest1</password>
+           </security>
+           <timeout>
+               <blocking-timeout-millis>20000</blocking-timeout-millis>
+               <idle-timeout-minutes>2</idle-timeout-minutes>
+           </timeout>
+           <statement>
+               <prepared-statement-cache-size>20</prepared-statement-cache-size>
+           </statement>
+           </datasource>
+

@@ -1,0 +1,20 @@
+---
+- hosts: AemPro
+  become: true
+  tasks:
+  #- name: "install updates"
+  #  yum: name=epel-release state=latest
+
+  #- name: "install updates"
+  #  yum: name=python-pip state=latest
+
+  #- name: "install pexpect"
+  #  pip:
+  #    name: pexpect
+
+  - name: "Case insensitive password string match"
+    expect:
+     command: '{{ java_bin }}/keytool -genkey -keystore ansible.keystore -storepass changeit -keyalg RSA -alias ansible -validity 1500 -dname "cn=FAMSDEVAUT1,ou=IT,dc=FAMS,dc=USAF" -ext SAN=dns:devfams.communityforce.com,ip:10.0.1.18'
+     responses:
+       'Enter key password for <ansible>\r\n\t(RETURN if same as keystore password)': "changeit"
+    timeout: 500

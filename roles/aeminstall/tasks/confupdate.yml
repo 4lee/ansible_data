@@ -1,0 +1,27 @@
+#- lineinfile:
+#    backrefs: true
+#    line: "CQ_RUNMODE='author,dev,nosamplecontent'"
+#    path: /apps/AEM63TARMK/author/crx-quickstart/start
+#    regexp: ^(.*)CQ_RUNMODE='author'(.*)$
+#- lineinfile:
+#    backrefs: true
+#    line: "CQ_JVM_OPTS='-server -Xms2048m -Xmx2048m -XX:MaxPermSize=512M -Djava.awt.headless=true'"
+#    path: /apps/AEM63TARMK/author/crx-quickstart/start
+#    regexp: "^(.*)CQ_JVM_OPTS='-server -Xmx1024m -XX:MaxPermSize=256M -Djava.awt.headless=true'(.*)$"
+---
+- name: "Update RUNMODE" 
+  replace:
+    dest: "{{ aem_installloc }}start"
+    regexp: "{{ runmode_regexp }}"
+    replace: "{{ runmode_replace }}"
+- name: "Update JVM_OPTS"
+  replace:
+    dest: "{{ aem_installloc }}start"
+    regexp: "{{ javaopts_regexp }}"
+    replace: "{{ javaopts_replace }}"
+- name: "Update Port"
+  replace:
+    dest: "{{ aem_installloc }}start"
+    regexp: "{{ port_regexp }}"
+    replace: "{{ port_replace }}"
+

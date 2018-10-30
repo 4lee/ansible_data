@@ -1,0 +1,16 @@
+---
+- name: "Copy Dispatcher from source"
+  copy:
+    src: "{{ dispatcher_loc }}"
+    dest: "{{ apache_folder }}modules"
+
+- name: "Certs directory creation"
+  command: '{{ item }} chdir="{{ apache_folder }}conf/"'
+  with_items:
+  - mkdir certs
+
+- name: "Configure openssl"
+  command: '{{ item }} chdir="{{ apache_folder }}conf/certs"'
+  with_items:
+  - openssl genrsa -out server.key 3072
+  - openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=CommunityForce Ltd/OU=FAMS/CN=famspublisher.communityforce.com"

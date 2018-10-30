@@ -1,0 +1,28 @@
+---
+- name: "Clioption.txt file"
+  file: "path={{ confBin_loc }}clioptions.txt mode=0755  state=touch"
+
+- name: "ADD JBOSS as block in clioptions.txt file"
+  blockinfile:
+    path : "{{ confBin_loc }}clioptions.txt"
+    content: |
+       LCHost=localhost
+       LCPort=8080
+       excludedSolutionComponents=ALC-LFS-LaunchPad,ALC-LFS-ConnectorMSSharePoint,ALC-LFS-ConnectorEMCDocumentum,ALC-LFS-ConnectorIBMFileNet,ALC-LFS-PDFGenerator,ALC-LFS-ConnectorIBMContentManager
+       includeCentralMigrationService=false
+       AdobeFontsDir={{ adobe_loc }}fonts
+       customerFontsDir=
+       systemFontsDir=/usr/share/fonts
+       LCTempDir={{ adobe_loc }}Temp
+       LCGlobalDocStorageDir={{ adobe_loc }}GDS
+       EnableDocumentDBStorage=false
+       enableFIPS=true
+       LCAdminUserID=administrator
+       LCAdminPassword=password
+       contentRepository.rootDir={{ adobe_loc }}crx-repository
+       ConfigureDocumentum=false
+       ConfigureIBMCM=false
+       lcGdsLocation=
+       lcPrevGdsLocation=
+       LCM.version=10.0
+  ignore_errors: true

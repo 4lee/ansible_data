@@ -1,0 +1,13 @@
+---
+#some task remain here
+- name: "Change permission of jboss-logging jar"
+  file:
+    path: "{{ adobe_loc }}/jboss/modules/system/layers/base/org/jboss/logging/main/jboss-logging-3.3.0.Final-redhat-1.jar"
+  mode: 0755
+
+- name: "Encrypt your database password by using below command"
+  command: "java -cp /apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/picketbox/main/picketbox-4.9.6.Final-redhat-1.jar:/apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/picketbox/main/picketbox-commons-1.0.0.final-redhat-4.jar:/apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/picketbox/main/picketbox-infinispan-4.9.6.Final-redhat-1.jar:/apps/adobe/adobe_experience_manager_Forms/jboss/modules/system/layers/base/org/jboss/logging/main/jboss-logging-3.3.0.Final-redhat-1.jar org.picketbox.datasource.security.SecureIdentityLoginModule {{ mssql_password }}"
+  register: encode_passstr
+
+- shell: "echo 'Encoded Password for database : {{ encode_passstr.stdout }}' | grep -o 'Encoded password.*'| cut -f2- -d:"
+

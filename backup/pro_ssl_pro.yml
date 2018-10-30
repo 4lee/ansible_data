@@ -1,0 +1,12 @@
+---
+- hosts: AemPro
+  become: true
+  tasks:
+
+  - name: "Copy LC_cert.cer from processing to local server"
+    fetch:
+      src: "{{ adobe_loc }}jboss/standalone/configuration/LC_cert.cer"
+      dest: "/home/devadmin/community-force_automation/ansible/softwares/"
+      flat: yes
+      mode: 0775
+

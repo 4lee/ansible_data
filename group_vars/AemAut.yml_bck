@@ -1,0 +1,43 @@
+---
+#common vars
+bin_dir: /usr/bin
+destination_folder: /apps/
+profile_path: /etc/profile.d
+executables_loc: ~/community-force_automation/ansible/executables/autaeminstall.sh
+#task - checkavail 
+apps_loc: /apps
+
+#task - java
+java_loc: ~/community-force_automation/ansible/softwares/jdk-8u181-linux-x64.tar.gz
+owner_user: devadmin
+group_user: devadmin
+java_deploymentDir: /etc/.java/deployment/
+
+# task - Apache
+apache_loc: ~/community-force_automation/ansible/softwares/apache_softwares.tar
+ap_owner_user: root
+ap_group_user: root
+
+# task - aeminstall
+aem_loc: ~/community-force_automation/ansible/softwares/aem64-author-p4502.jar
+lic_loc: ~/community-force_automation/ansible/softwares/license.properties
+aem_installloc: /apps/AEM64TARMK/author/crx-quickstart/bin/
+template_loc: ~/community-force_automation/ansible/roles/aeminstall/templates/authservice.sh
+runmode_regexp: CQ_RUNMODE='author'
+runmode_replace: CQ_RUNMODE='author,dev,nosamplecontent'
+javaopts_regexp: ^(.*)CQ_JVM_OPTS='-server -Xmx1024m -XX:MaxPermSize=256M -Djava.awt.headless=true'(.*)$
+javaopts_replace: CQ_JVM_OPTS='-server -Xms2048m -Xmx2048m -XX:MaxPermSize=512M -Djava.awt.headless=true'
+service_file: authservice.sh
+port_regexp: CQ_PORT=4502
+port_replace: CQ_PORT=4502
+
+#task - openssl
+dispatcher_loc: ~/community-force_automation/ansible/softwares/dispatcher-apache2.4-4.2.3.so
+dispatcher_src_file: ~/community-force_automation/ansible/softwares/dispatcher.any
+apache_folder: /apps/apache/2.4.6/
+apache_conf_file: /apps/apache/2.4.6/conf/httpd.conf
+dispatcher_file: /apps/apache/2.4.6/conf/dispatcher.any
+apache_conf_folder: /apps/apache/2.4.6/conf
+apache_sslconf_file: /apps/apache/2.4.6/conf/extra/httpd-ssl.conf
+openssl_cmd1: openssl genrsa -out server.key 3072
+openssl_cmd2: openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=CommunityForce Ltd/OU=FAMS/CN=famspublisher.communityforce.com"
