@@ -21,7 +21,7 @@ group_user: devadmin
 java_deploymentDir: /etc/.java/deployment/
 
 # task - Apache
-private_ip: 192.167.1.5
+private_ip: <IP>
 apache_loc: ~/community-force_automation/ansible/softwares/apache_softwares.tar
 ap_owner_user: root
 ap_group_user: root
@@ -58,7 +58,7 @@ dispatcher_file: /apps/apache/2.4.6/conf/dispatcher.any
 apache_conf_folder: /apps/apache/2.4.6/conf
 apache_sslconf_file: /apps/apache/2.4.6/conf/extra/httpd-ssl.conf
 openssl_cmd1: openssl genrsa -out server.key 3072
-openssl_cmd2: openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=CommunityForce Ltd/OU=FAMS/CN=192.167.1.5"
+openssl_cmd2: openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=<Company name> Ltd/OU=FAMS/CN=<CN IP>"
 
 
 home_loc: /home/devadmin

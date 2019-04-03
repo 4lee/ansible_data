@@ -3,7 +3,7 @@
 bin_dir: /usr/bin
 destination_folder: /apps/
 profile_path: /etc/profile.d
-executables_loc: ~/community-force_automation/ansible/executables/pubaeminstall.sh
+executables_loc: ~/<data location>/executables/pubaeminstall.sh
 #task - checkavail 
 apps_loc: /apps
 bin_bash: /bin/bash
@@ -15,14 +15,14 @@ was_homedir: /home/was
 was_group: wheel
 
 #task - java
-java_loc: ~/community-force_automation/ansible/softwares/jdk-8u181-linux-x64.tar.gz
+java_loc: ~/<data location>/softwares/jdk-8u181-linux-x64.tar.gz
 owner_user: devadmin
 group_user: devadmin
 java_deploymentDir: /etc/.java/deployment/
 
 # task - Apache
-private_ip: 192.167.1.6
-apache_loc: ~/community-force_automation/ansible/softwares/apache_softwares.tar
+private_ip: <Private IP>
+apache_loc: ~/<data location>/softwares/apache_softwares.tar
 ap_owner_user: root
 ap_group_user: root
 httpd_vhost: Include conf/extra/httpd-vhosts.conf
@@ -37,10 +37,10 @@ server_name: ServerName www.example.com:80
 dispatcher_mod: LoadModule dispatcher_module /apps/apache/2.4.6/modules/dispatcher-apache2.4-4.2.3.so
 
 # task - aeminstall
-aem_loc: ~/community-force_automation/ansible/softwares/aem64-author-p4502.jar
-lic_loc: ~/community-force_automation/ansible/softwares/license.properties
+aem_loc: ~/<data location>/softwares/aem64-author-p4502.jar
+lic_loc: ~/<data location>/softwares/license.properties
 aem_installloc: /apps/AEM64TARMK/publish/crx-quickstart/bin/
-template_loc: ~/community-force_automation/ansible/roles/aeminstall/templates/pubservice.sh
+template_loc: ~/<data location>/roles/aeminstall/templates/pubservice.sh
 runmode_regexp: CQ_RUNMODE='author'
 runmode_replace: CQ_RUNMODE='publish,dev,nosamplecontent'
 javaopts_regexp: ^(.*)CQ_JVM_OPTS='-server -Xmx1024m -XX:MaxPermSize=256M -Djava.awt.headless=true'(.*)$
@@ -50,15 +50,15 @@ port_regexp: CQ_PORT=4502
 port_replace: CQ_PORT=4503
 
 #task - openssl
-dispatcher_loc: ~/community-force_automation/ansible/softwares/dispatcher-apache2.4-4.2.3.so
-dispatcher_src_file: ~/community-force_automation/ansible/softwares/publisher/dispatcher.any
+dispatcher_loc: ~/<data location>/softwares/dispatcher-apache2.4-4.2.3.so
+dispatcher_src_file: ~/<data location>/softwares/publisher/dispatcher.any
 apache_folder: /apps/apache/2.4.6/
 apache_sslconf_file: /apps/apache/2.4.6/conf/extra/httpd-ssl.conf
 apache_conf_file: /apps/apache/2.4.6/conf/httpd.conf
 dispatcher_file: /apps/apache/2.4.6/conf/dispatcher.any
 apache_conf_folder: /apps/apache/2.4.6/conf
 openssl_cmd1: openssl genrsa -out server.key 3072
-openssl_cmd2: openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=CommunityForce Ltd/OU=FAMS/CN=192.167.1.6"
+openssl_cmd2: openssl req -new -x509 -key server.key -sha256 -config /etc/pki/tls/openssl.cnf -out server.crt -days 730 -subj "/C=US/ST=Texas/L=Virginia/O=<Org name> Ltd/OU=FAMS/CN=<IP>"
 
 
 home_loc: /home/devadmin

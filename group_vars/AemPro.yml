@@ -1,23 +1,23 @@
 ---
 
 # mssql Credential
-mssql_user: AnsbleAem@experimentalsql
-mssql_password: Community4rceTest1
-mssql_connectionURL: experimentalsql.database.windows.net
+mssql_user: 
+mssql_password: 
+mssql_connectionURL: 
 
 
 #common vars
 bin_dir: /usr/bin
 destination_folder: /apps/
 profile_path: /etc/profile.d
-executables_loc: ~/community-force_automation/ansible/executables/autaeminstall.sh
+executables_loc: ~/<data location>/executables/autaeminstall.sh
 
 #task - checkavail 
 apps_loc: /apps
 
 #task - java
-#java_loc: ~/community-force_automation/ansible/softwares/jdk-8u181-linux-x64.tar.gz
-java_loc: ~/community-force_automation/ansible/softwares/jdk-8u111-linux-x64.tar.gz
+#java_loc: ~/<data location>/softwares/jdk-8u181-linux-x64.tar.gz
+java_loc: ~/<data location>/softwares/jdk-8u111-linux-x64.tar.gz
 owner_user: root
 group_user: root
 javadest_folder: /apps/java/
@@ -25,12 +25,12 @@ java_deploymentDir: /etc/.java/deployment/
 java_bin: /apps/java/java/bin
 
 # task - Apache
-apache_loc: ~/community-force_automation/ansible/softwares/apache_softwares.tar
+apache_loc: ~/<data location>/softwares/apache_softwares.tar
 ap_owner_user: root
 ap_group_user: root
 
 # task - aem
-aem_loc: ~/community-force_automation/ansible/softwares/aemforms_server_6_3_0_jboss_all_unix.tar.gz
+aem_loc: ~/<data location>/softwares/aemforms_server_6_3_0_jboss_all_unix.tar.gz
 aem_dest: /apps/aemforms_server_6_3_0_jboss_all_unix/
 adobe_loc: /apps/adobe/adobe_experience_manager_Forms/
 
@@ -45,12 +45,12 @@ jar_command: java -cp /apps/adobe/adobe_experience_manager_Forms/jboss-as-7.1.1.
 # task- Jboss
 #jboss_dlink: http://download.jboss.org/jbossas/7.1/jboss-as-7.1.1.Final/jboss-as-7.1.1.Final.tar.gz
 jboss_binloc: /apps/adobe/adobe_experience_manager_Forms/jboss/bin/
-jbosstemplate_loc: ~/community-force_automation/ansible/roles/pro_jboss/templates/jbossas7
+jbosstemplate_loc: ~/<data location>/roles/pro_jboss/templates/jbossas7
 confBin_loc: /apps/adobe/adobe_experience_manager_Forms/configurationManager/bin/
-clioptions_templateLoc: ~/community-force_automation/ansible/roles/pro_jboss/templates/clioptions.txt
+clioptions_templateLoc: ~/<data location>/roles/pro_jboss/templates/clioptions.txt
 
 mssql_conn_regexp: ^(.*)<connection-url>jdbc:sqlserver://localhost:1433(.*)$
-mssql_conn_replace: <connection-url>jdbc:sqlserver://experimentalsql.database.windows.net:1433;DatabaseName=AnsbleAem;encrypt=true;trustServerCertificate=true;hostNameInCertificate=eastus1-a.control.database.windows.net</connection-url>
+mssql_conn_replace: <connection-url>jdbc:sqlserver://<mysqlhost>:1433;DatabaseName=<DB name>;encrypt=true;trustServerCertificate=true;hostNameInCertificate=<hostname certificate></connection-url>
 
 
 # task- Standalonefile Update
@@ -63,7 +63,7 @@ jboss_standalone6: JAVA_OPTS="$JAVA_OPTS -Dadobeidp.serverName=server1 -Dfile.en
 jboss_ip: 192.167.1.7
 
 #lc_msql file variables
-lcmssqltemplate_loc: ~/community-force_automation/ansible/roles/pro_jboss/templates/lc_mssql.xml
+lcmssqltemplate_loc: ~/<data location>/roles/pro_jboss/templates/lc_mssql.xml
 standaloneconf_loc: /apps/adobe/adobe_experience_manager_Forms/jboss/standalone/configuration/
 
 lc_mssql1: <socket-binding name="http" interface="any" port="80"/>
@@ -78,8 +78,8 @@ ServerLog: /apps/adobe/adobe_experience_manager_Forms/jboss/standalone/log/serve
 CrxErrorLog: /apps/adobe/adobe_experience_manager_Forms/crx-repository/logs/error.log
 
 #task - openssl
-dispatcher_loc: ~/community-force_automation/ansible/softwares/dispatcher-apache2.4-4.2.3.so
-dispatcher_src_file: ~/community-force_automation/ansible/softwares/dispatcher.any
+dispatcher_loc: ~/<data location>/softwares/dispatcher-apache2.4-4.2.3.so
+dispatcher_src_file: ~/<data location>/softwares/dispatcher.any
 apache_folder: /apps/apache/2.4.6/
 apache_conf_file: /apps/apache/2.4.6/conf/httpd.conf
 dispatcher_file: /apps/apache/2.4.6/conf/dispatcher.any
@@ -97,5 +97,5 @@ home_loc: /home/devadmin/
 connector_http: <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"/>
 connector_https: <connector name="https" protocol="HTTP/1.1" scheme="https" socket-binding="https" secure="true">
 ssl_certificate_block: <ssl certificate-key-file="/apps/adobe/adobe_experience_manager_Forms/jboss/standalone/configuration/ansible.keystore" key-alias="ansible" password="changeit" />
-aem63_component_zip_loc: ~/community-force_automation/ansible/softwares/acs-aem-commons-content-3.11.0.zip
-acs_aem_zip_loc: ~/community-force_automation/ansible/softwares/acs-aem-commons-content-3.11.0.zip
+aem63_component_zip_loc: ~/<data location>/softwares/acs-aem-commons-content-3.11.0.zip
+acs_aem_zip_loc: ~/<data location>/softwares/acs-aem-commons-content-3.11.0.zip
